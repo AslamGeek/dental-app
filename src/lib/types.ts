@@ -12,6 +12,7 @@ export interface Clinic {
   timezone: string;
   working_hours_start: string;
   working_hours_end: string;
+  weekly_schedule?: DaySchedule[];
   created_at: string;
 }
 
@@ -34,6 +35,27 @@ export interface Patient {
   flagged_wrong_number: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface TimePeriod {
+  start: string; // "09:30"
+  end: string;   // "13:00"
+}
+
+export interface DaySchedule {
+  day_of_week: number; // 0=Sunday, 1=Monday, ..., 6=Saturday
+  is_open: boolean;
+  periods: TimePeriod[];
+}
+
+export interface TreatmentCatalogItem {
+  id: string;
+  clinic_id: string;
+  name: string;
+  duration_minutes: number;
+  price: number;
+  is_active: boolean;
+  created_at: string;
 }
 
 export type TreatmentStatus = 
@@ -67,9 +89,11 @@ export interface Appointment {
   id: string;
   clinic_id: string;
   patient_id: string;
+  treatment_id?: string;
   treatment_opportunity_id?: string;
   appointment_date: string; // YYYY-MM-DD
-  appointment_time: string; // HH:mm:ss or HH:mm
+  appointment_time: string; // HH:mm:ss or HH:mm (Start time)
+  duration_minutes?: number;
   treatment_name: string;
   status: AppointmentStatus;
   created_at: string;

@@ -2,7 +2,7 @@
 -- 03_seed.sql: Realistic Seed Data for Sree Balaji Dental Care, Kadapa, AP
 
 -- 1. Insert Clinic
-INSERT INTO clinics (id, name, city, state, phone, currency, timezone, working_hours_start, working_hours_end)
+INSERT INTO clinics (id, name, city, state, phone, currency, timezone, working_hours_start, working_hours_end, weekly_schedule)
 VALUES (
     'c0000000-0000-0000-0000-000000000001',
     'Sree Balaji Dental Care',
@@ -12,7 +12,16 @@ VALUES (
     'INR',
     'Asia/Kolkata',
     '09:30:00',
-    '20:30:00'
+    '20:30:00',
+    '[
+      {"day_of_week": 0, "is_open": false, "periods": []},
+      {"day_of_week": 1, "is_open": true, "periods": [{"start": "09:30", "end": "13:00"}, {"start": "16:00", "end": "20:30"}]},
+      {"day_of_week": 2, "is_open": true, "periods": [{"start": "09:30", "end": "13:00"}, {"start": "16:00", "end": "20:30"}]},
+      {"day_of_week": 3, "is_open": true, "periods": [{"start": "09:30", "end": "13:00"}, {"start": "16:00", "end": "20:30"}]},
+      {"day_of_week": 4, "is_open": true, "periods": [{"start": "09:30", "end": "13:00"}, {"start": "16:00", "end": "20:30"}]},
+      {"day_of_week": 5, "is_open": true, "periods": [{"start": "09:30", "end": "13:00"}, {"start": "16:00", "end": "20:30"}]},
+      {"day_of_week": 6, "is_open": true, "periods": [{"start": "09:30", "end": "13:00"}, {"start": "16:00", "end": "20:30"}]}
+    ]'::jsonb
 ) ON CONFLICT (id) DO NOTHING;
 
 -- 2. Insert Staff Members
@@ -48,7 +57,21 @@ VALUES
 ('p0000000-0000-0000-0000-000000000010', 'c0000000-0000-0000-0000-000000000001', 'Rajesh Varma', '+919888334455', 'rajesh.v@example.com', FALSE, NOW() - INTERVAL '15 days')
 ON CONFLICT (id) DO NOTHING;
 
--- 4. Insert Treatment Opportunities
+-- 4. Insert Predefined Treatment Catalog
+INSERT INTO treatment_catalog (id, clinic_id, name, duration_minutes, price, is_active)
+VALUES
+('tc_consultation', 'c0000000-0000-0000-0000-000000000001', 'Consultation & Examination', 30, 500, TRUE),
+('tc_cleaning', 'c0000000-0000-0000-0000-000000000001', 'Cleaning & Scaling', 30, 1500, TRUE),
+('tc_filling', 'c0000000-0000-0000-0000-000000000001', 'Dental Filling', 30, 2000, TRUE),
+('tc_rct', 'c0000000-0000-0000-0000-000000000001', 'Root Canal Treatment', 60, 8000, TRUE),
+('tc_crown', 'c0000000-0000-0000-0000-000000000001', 'Dental Crown', 60, 12000, TRUE),
+('tc_implant', 'c0000000-0000-0000-0000-000000000001', 'Dental Implant', 90, 85000, TRUE),
+('tc_braces', 'c0000000-0000-0000-0000-000000000001', 'Braces Consultation', 30, 500, TRUE),
+('tc_whitening', 'c0000000-0000-0000-0000-000000000001', 'Teeth Whitening', 60, 8000, TRUE),
+('tc_extraction', 'c0000000-0000-0000-0000-000000000001', 'Tooth Extraction', 30, 2000, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- 5. Insert Treatment Opportunities
 INSERT INTO treatment_opportunities (id, clinic_id, patient_id, treatment_name, estimated_value, status, decline_reason, created_at)
 VALUES
 ('t0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000001', 'Dental Implant', 85000, 'considering', NULL, NOW() - INTERVAL '5 days'),
@@ -63,15 +86,15 @@ VALUES
 ('t0000000-0000-0000-0000-000000000010', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000010', 'Bridge', 35000, 'declined', 'Went elsewhere', NOW() - INTERVAL '15 days')
 ON CONFLICT (id) DO NOTHING;
 
--- 5. Insert Appointments
-INSERT INTO appointments (id, clinic_id, patient_id, treatment_opportunity_id, appointment_date, appointment_time, treatment_name, status)
+-- 6. Insert Appointments
+INSERT INTO appointments (id, clinic_id, patient_id, treatment_id, treatment_opportunity_id, appointment_date, appointment_time, duration_minutes, treatment_name, status)
 VALUES
--- Vijay Bhaskar: Tomorrow 5:30 PM (Needs confirmation)
-('a0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000003', 't0000000-0000-0000-0000-000000000003', CURRENT_DATE + INTERVAL '1 day', '17:30:00', 'Root Canal & Crown', 'scheduled'),
--- Suresh Naidu: Missed yesterday (No-show)
-('a0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000004', 't0000000-0000-0000-0000-000000000004', CURRENT_DATE - INTERVAL '1 day', '11:00:00', 'Cleaning & Scaling', 'no_show'),
--- Meena Kumari: Today 11:30 AM (Confirmed)
-('a0000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000009', 't0000000-0000-0000-0000-000000000009', CURRENT_DATE, '11:30:00', 'Filling & Polishing', 'confirmed')
+-- Vijay Bhaskar: Tomorrow 5:30 PM (Root Canal, 60 min)
+('a0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000003', 'tc_rct', 't0000000-0000-0000-0000-000000000003', CURRENT_DATE + INTERVAL '1 day', '17:30:00', 60, 'Root Canal Treatment', 'scheduled'),
+-- Suresh Naidu: Missed yesterday (Cleaning, 30 min)
+('a0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000004', 'tc_cleaning', 't0000000-0000-0000-0000-000000000004', CURRENT_DATE - INTERVAL '1 day', '11:00:00', 30, 'Cleaning & Scaling', 'no_show'),
+-- Meena Kumari: Today 11:30 AM (Filling, 30 min)
+('a0000000-0000-0000-0000-000000000003', 'c0000000-0000-0000-0000-000000000001', 'p0000000-0000-0000-0000-000000000009', 'tc_filling', 't0000000-0000-0000-0000-000000000009', CURRENT_DATE, '11:30:00', 30, 'Dental Filling', 'confirmed')
 ON CONFLICT (id) DO NOTHING;
 
 -- 6. Insert Recent Interactions

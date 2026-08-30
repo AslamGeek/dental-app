@@ -10,15 +10,6 @@ interface AddPatientModalProps {
   onSuccess?: (patientId: string) => void;
 }
 
-const COMMON_TREATMENTS = [
-  { name: 'Dental Implant', value: 85000 },
-  { name: 'Braces / Aligners', value: 55000 },
-  { name: 'Root Canal & Crown', value: 12000 },
-  { name: 'Ceramic Crown', value: 18000 },
-  { name: 'Teeth Whitening', value: 8000 },
-  { name: 'Cleaning & Scaling', value: 1500 },
-];
-
 export default function AddPatientModal({
   isOpen,
   onClose,
@@ -31,11 +22,13 @@ export default function AddPatientModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const activeTreatments = dentalStore.getActiveTreatments();
+
   if (!isOpen) return null;
 
-  const handleSelectQuickTreatment = (treatment: { name: string; value: number }) => {
+  const handleSelectQuickTreatment = (treatment: { name: string; price: number }) => {
     setTreatmentName(treatment.name);
-    setEstimatedValue(treatment.value.toString());
+    setEstimatedValue(treatment.price.toString());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -150,9 +143,9 @@ export default function AddPatientModal({
 
             {/* Quick 1-tap treatment pills */}
             <div className="flex flex-wrap gap-1.5">
-              {COMMON_TREATMENTS.map((item) => (
+              {activeTreatments.map((item) => (
                 <button
-                  key={item.name}
+                  key={item.id}
                   type="button"
                   onClick={() => handleSelectQuickTreatment(item)}
                   className={`px-2 py-1 text-[11px] rounded-full border transition-colors ${

@@ -12,7 +12,10 @@ import {
   FollowUpItem,
   InteractionOutcome,
   AppointmentStatus,
-  TreatmentStatus
+  TreatmentStatus,
+  TreatmentCatalogItem,
+  DaySchedule,
+  TimePeriod,
 } from './types';
 import { 
   evaluateOutcomeRules, 
@@ -24,6 +27,154 @@ import { getRelativeDueDateContext } from './formatting';
 
 const CLINIC_ID = 'c0000000-0000-0000-0000-000000000001';
 const ASSISTANT_USER_ID = 'u0000000-0000-0000-0000-000000000002';
+
+// -------------------------------------------------------------
+// DEFAULT MULTI-PERIOD CLINIC SCHEDULE (Asia/Kolkata)
+// Mon-Sat: 09:30 AM - 01:00 PM & 04:00 PM - 08:30 PM
+// Sun: Closed
+// -------------------------------------------------------------
+export const INITIAL_SCHEDULE: DaySchedule[] = [
+  {
+    day_of_week: 0, // Sunday
+    is_open: false,
+    periods: [],
+  },
+  {
+    day_of_week: 1, // Monday
+    is_open: true,
+    periods: [
+      { start: '09:30', end: '13:00' },
+      { start: '16:00', end: '20:30' },
+    ],
+  },
+  {
+    day_of_week: 2, // Tuesday
+    is_open: true,
+    periods: [
+      { start: '09:30', end: '13:00' },
+      { start: '16:00', end: '20:30' },
+    ],
+  },
+  {
+    day_of_week: 3, // Wednesday
+    is_open: true,
+    periods: [
+      { start: '09:30', end: '13:00' },
+      { start: '16:00', end: '20:30' },
+    ],
+  },
+  {
+    day_of_week: 4, // Thursday
+    is_open: true,
+    periods: [
+      { start: '09:30', end: '13:00' },
+      { start: '16:00', end: '20:30' },
+    ],
+  },
+  {
+    day_of_week: 5, // Friday
+    is_open: true,
+    periods: [
+      { start: '09:30', end: '13:00' },
+      { start: '16:00', end: '20:30' },
+    ],
+  },
+  {
+    day_of_week: 6, // Saturday
+    is_open: true,
+    periods: [
+      { start: '09:30', end: '13:00' },
+      { start: '16:00', end: '20:30' },
+    ],
+  },
+];
+
+// -------------------------------------------------------------
+// DEFAULT PREDEFINED TREATMENT CATALOG
+// -------------------------------------------------------------
+export const INITIAL_TREATMENT_CATALOG: TreatmentCatalogItem[] = [
+  {
+    id: 'tc_consultation',
+    clinic_id: CLINIC_ID,
+    name: 'Consultation & Examination',
+    duration_minutes: 30,
+    price: 500,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_cleaning',
+    clinic_id: CLINIC_ID,
+    name: 'Cleaning & Scaling',
+    duration_minutes: 30,
+    price: 1500,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_filling',
+    clinic_id: CLINIC_ID,
+    name: 'Dental Filling',
+    duration_minutes: 30,
+    price: 2000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_rct',
+    clinic_id: CLINIC_ID,
+    name: 'Root Canal Treatment',
+    duration_minutes: 60,
+    price: 8000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_crown',
+    clinic_id: CLINIC_ID,
+    name: 'Dental Crown',
+    duration_minutes: 60,
+    price: 12000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_implant',
+    clinic_id: CLINIC_ID,
+    name: 'Dental Implant',
+    duration_minutes: 90,
+    price: 85000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_braces',
+    clinic_id: CLINIC_ID,
+    name: 'Braces Consultation',
+    duration_minutes: 30,
+    price: 500,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_whitening',
+    clinic_id: CLINIC_ID,
+    name: 'Teeth Whitening',
+    duration_minutes: 60,
+    price: 8000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_extraction',
+    clinic_id: CLINIC_ID,
+    name: 'Tooth Extraction',
+    duration_minutes: 30,
+    price: 2000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+];
 
 // -------------------------------------------------------------
 // SEED DATA INITIALIZER (Kadapa, Andhra Pradesh)
@@ -38,6 +189,7 @@ export const INITIAL_CLINIC: Clinic = {
   timezone: 'Asia/Kolkata',
   working_hours_start: '09:30:00',
   working_hours_end: '20:30:00',
+  weekly_schedule: INITIAL_SCHEDULE,
   created_at: new Date().toISOString(),
 };
 
@@ -282,10 +434,12 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'a1',
     clinic_id: CLINIC_ID,
     patient_id: 'p3',
+    treatment_id: 'tc_rct',
     treatment_opportunity_id: 't3',
     appointment_date: tomorrowStr,
     appointment_time: '17:30:00',
-    treatment_name: 'Root Canal & Crown',
+    duration_minutes: 60,
+    treatment_name: 'Root Canal Treatment',
     status: 'scheduled',
     created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
@@ -293,9 +447,11 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'a2',
     clinic_id: CLINIC_ID,
     patient_id: 'p4',
+    treatment_id: 'tc_cleaning',
     treatment_opportunity_id: 't4',
     appointment_date: yesterdayStr,
     appointment_time: '11:00:00',
+    duration_minutes: 30,
     treatment_name: 'Cleaning & Scaling',
     status: 'no_show',
     created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
@@ -304,10 +460,12 @@ export const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'a3',
     clinic_id: CLINIC_ID,
     patient_id: 'p9',
+    treatment_id: 'tc_filling',
     treatment_opportunity_id: 't9',
     appointment_date: todayStr,
     appointment_time: '11:30:00',
-    treatment_name: 'Filling & Polishing',
+    duration_minutes: 30,
+    treatment_name: 'Dental Filling',
     status: 'confirmed',
     created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
@@ -424,6 +582,8 @@ class DentalStore {
   private appointments: Appointment[] = INITIAL_APPOINTMENTS;
   private interactions: Interaction[] = INITIAL_INTERACTIONS;
   private followUps: FollowUp[] = INITIAL_FOLLOW_UPS;
+  private treatmentCatalog: TreatmentCatalogItem[] = INITIAL_TREATMENT_CATALOG;
+  private schedule: DaySchedule[] = INITIAL_SCHEDULE;
   private listeners: Set<() => void> = new Set();
 
   constructor() {
@@ -442,6 +602,8 @@ class DentalStore {
         if (parsed.appointments) this.appointments = parsed.appointments;
         if (parsed.interactions) this.interactions = parsed.interactions;
         if (parsed.followUps) this.followUps = parsed.followUps;
+        if (parsed.treatmentCatalog) this.treatmentCatalog = parsed.treatmentCatalog;
+        if (parsed.schedule) this.schedule = parsed.schedule;
       }
     } catch {
       // fallback to initial seed
@@ -459,6 +621,8 @@ class DentalStore {
           appointments: this.appointments,
           interactions: this.interactions,
           followUps: this.followUps,
+          treatmentCatalog: this.treatmentCatalog,
+          schedule: this.schedule,
         })
       );
     } catch {
@@ -476,10 +640,180 @@ class DentalStore {
     this.listeners.forEach((l) => l());
   }
 
+  // --- TIME & SCHEDULE HELPERS ---
+
+  public timeToMinutes(timeStr: string): number {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':');
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return hours * 60 + minutes;
+  }
+
+  public minutesToTime(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:00`;
+  }
+
+  public getDayOfWeek(dateStr: string): number {
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length < 3) return 0;
+    const [year, month, day] = parts;
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0)).getUTCDay();
+  }
+
   // --- QUERY METHODS ---
 
   public getClinic(): Clinic {
-    return this.clinic;
+    return {
+      ...this.clinic,
+      weekly_schedule: this.schedule,
+    };
+  }
+
+  public getSchedule(): DaySchedule[] {
+    return [...this.schedule];
+  }
+
+  public updateSchedule(newSchedule: DaySchedule[]): void {
+    this.schedule = newSchedule;
+    this.saveToLocalStorage();
+  }
+
+  public getTreatmentCatalog(): TreatmentCatalogItem[] {
+    return [...this.treatmentCatalog];
+  }
+
+  public getActiveTreatments(): TreatmentCatalogItem[] {
+    return this.treatmentCatalog.filter((t) => t.is_active && t.clinic_id === CLINIC_ID);
+  }
+
+  public getTreatmentCatalogItem(id: string): TreatmentCatalogItem | undefined {
+    return this.treatmentCatalog.find((t) => t.id === id);
+  }
+
+  public addTreatmentCatalogItem(params: {
+    name: string;
+    duration_minutes: number;
+    price: number;
+  }): TreatmentCatalogItem {
+    const newItem: TreatmentCatalogItem = {
+      id: `tc_${Date.now()}`,
+      clinic_id: CLINIC_ID,
+      name: params.name.trim(),
+      duration_minutes: Number(params.duration_minutes) || 30,
+      price: Number(params.price) || 0,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    };
+    this.treatmentCatalog.push(newItem);
+    this.saveToLocalStorage();
+    return newItem;
+  }
+
+  public updateTreatmentCatalogItem(
+    id: string,
+    updates: Partial<Pick<TreatmentCatalogItem, 'name' | 'duration_minutes' | 'price' | 'is_active'>>
+  ): TreatmentCatalogItem | undefined {
+    const item = this.treatmentCatalog.find((t) => t.id === id);
+    if (item) {
+      if (updates.name !== undefined) item.name = updates.name.trim();
+      if (updates.duration_minutes !== undefined) item.duration_minutes = Number(updates.duration_minutes);
+      if (updates.price !== undefined) item.price = Number(updates.price);
+      if (updates.is_active !== undefined) item.is_active = updates.is_active;
+      this.saveToLocalStorage();
+    }
+    return item;
+  }
+
+  public toggleTreatmentCatalogStatus(id: string): TreatmentCatalogItem | undefined {
+    const item = this.treatmentCatalog.find((t) => t.id === id);
+    if (item) {
+      item.is_active = !item.is_active;
+      this.saveToLocalStorage();
+    }
+    return item;
+  }
+
+  /**
+   * Generates strictly validated, collision-free available time slots
+   * for a given date and catalog treatment.
+   */
+  public getAvailableSlots(
+    dateStr: string,
+    treatmentId: string
+  ): {
+    status: 'open' | 'closed' | 'no_slots' | 'invalid_treatment';
+    slots: string[];
+    reason?: string;
+  } {
+    if (!dateStr || !treatmentId) {
+      return { status: 'no_slots', slots: [], reason: 'Please select a date and treatment.' };
+    }
+
+    const treatment = this.treatmentCatalog.find(
+      (t) => t.id === treatmentId && t.clinic_id === CLINIC_ID
+    );
+    if (!treatment || !treatment.is_active) {
+      return { status: 'invalid_treatment', slots: [], reason: 'Selected treatment is inactive or invalid.' };
+    }
+
+    const dayOfWeek = this.getDayOfWeek(dateStr);
+    const daySchedule = this.schedule.find((s) => s.day_of_week === dayOfWeek);
+
+    if (!daySchedule || !daySchedule.is_open || daySchedule.periods.length === 0) {
+      return { status: 'closed', slots: [], reason: 'Clinic is closed on this day.' };
+    }
+
+    const duration = treatment.duration_minutes; // e.g. 30, 60, 90 min
+    const slotInterval = 30; // 30-minute interval
+
+    // Existing active appointments on this day (excluding cancelled)
+    const existingAppts = this.appointments.filter(
+      (a) => a.appointment_date === dateStr && a.status !== 'cancelled'
+    );
+
+    const bookedIntervals: { start: number; end: number }[] = existingAppts.map((a) => {
+      const startMin = this.timeToMinutes(a.appointment_time);
+      let apptDuration = a.duration_minutes;
+      if (!apptDuration) {
+        const cat = this.treatmentCatalog.find(
+          (tc) => tc.id === a.treatment_id || tc.name.toLowerCase() === a.treatment_name.toLowerCase()
+        );
+        apptDuration = cat?.duration_minutes || 30;
+      }
+      return {
+        start: startMin,
+        end: startMin + apptDuration,
+      };
+    });
+
+    const availableSlots: string[] = [];
+
+    for (const period of daySchedule.periods) {
+      const pStart = this.timeToMinutes(period.start);
+      const pEnd = this.timeToMinutes(period.end);
+
+      for (let slotStart = pStart; slotStart + duration <= pEnd; slotStart += slotInterval) {
+        const slotEnd = slotStart + duration;
+
+        // Overlap test: max(slotStart, b.start) < min(slotEnd, b.end)
+        const hasOverlap = bookedIntervals.some(
+          (b) => Math.max(slotStart, b.start) < Math.min(slotEnd, b.end)
+        );
+
+        if (!hasOverlap) {
+          availableSlots.push(this.minutesToTime(slotStart));
+        }
+      }
+    }
+
+    if (availableSlots.length === 0) {
+      return { status: 'no_slots', slots: [], reason: 'No available times on this date.' };
+    }
+
+    return { status: 'open', slots: availableSlots };
   }
 
   public getPatients(): Patient[] {
@@ -766,18 +1100,32 @@ class DentalStore {
 
     // 6. If appointment was booked directly from outcome
     if (params.outcome === 'appointment_booked' && params.context?.bookedAppointmentDate) {
-      const newAppt: Appointment = {
-        id: `a_${Date.now()}`,
-        clinic_id: CLINIC_ID,
-        patient_id: currentFollowUp.patient_id,
-        treatment_opportunity_id: treatment?.id,
-        appointment_date: params.context.bookedAppointmentDate,
-        appointment_time: params.context.bookedAppointmentTime || '11:00:00',
-        treatment_name: treatment?.treatment_name || 'Consultation',
-        status: 'scheduled',
-        created_at: new Date().toISOString(),
-      };
-      this.appointments.unshift(newAppt);
+      try {
+        const apptDate = params.context.bookedAppointmentDate;
+        const apptTime = params.context.bookedAppointmentTime || '11:00:00';
+        
+        // Find suitable catalog treatment
+        let treatmentId: string | undefined;
+        if (treatment) {
+          const match = this.treatmentCatalog.find(
+            (tc) => tc.name.toLowerCase() === treatment.treatment_name.toLowerCase() && tc.is_active
+          );
+          if (match) treatmentId = match.id;
+        }
+        if (!treatmentId) {
+          treatmentId = this.getActiveTreatments()[0]?.id || 'tc_consultation';
+        }
+
+        this.addAppointment({
+          patient_id: currentFollowUp.patient_id,
+          treatment_id: treatmentId,
+          treatment_opportunity_id: treatment?.id,
+          appointment_date: apptDate,
+          appointment_time: apptTime,
+        });
+      } catch (err) {
+        console.warn('Could not auto-add validated appointment from outcome:', err);
+      }
     }
 
     // 7. Create Next Follow-Up if needed
@@ -806,23 +1154,116 @@ class DentalStore {
   }
 
   /**
-   * Fast Appointment Booking
+   * Fast Appointment Booking with strict catalog duration & collision validation
    */
   public addAppointment(params: {
     patient_id: string;
+    treatment_id?: string;
+    treatment_name?: string;
     treatment_opportunity_id?: string;
     appointment_date: string; // YYYY-MM-DD
-    appointment_time: string; // HH:mm:ss
-    treatment_name: string;
+    appointment_time: string; // HH:mm:ss or HH:mm
   }): Appointment {
+    // 1. Patient check
+    const patient = this.patients.find((p) => p.id === params.patient_id);
+    if (!patient) {
+      throw new Error('Patient not found.');
+    }
+
+    // 2. Treatment validation: Must resolve from catalog
+    let treatmentItem: TreatmentCatalogItem | undefined;
+    if (params.treatment_id) {
+      treatmentItem = this.treatmentCatalog.find(
+        (t) => t.id === params.treatment_id && t.clinic_id === CLINIC_ID
+      );
+    } else if (params.treatment_name) {
+      treatmentItem = this.treatmentCatalog.find(
+        (t) => t.name.toLowerCase() === params.treatment_name!.toLowerCase() && t.clinic_id === CLINIC_ID
+      );
+    }
+
+    if (!treatmentItem) {
+      throw new Error('Invalid treatment: Treatment must be selected from the clinic treatment catalog.');
+    }
+    if (!treatmentItem.is_active) {
+      throw new Error('Treatment is currently inactive.');
+    }
+    if (treatmentItem.clinic_id !== CLINIC_ID) {
+      throw new Error('Treatment belongs to another clinic.');
+    }
+
+    // Treatment duration MUST come from the database/catalog, not from a client-supplied value
+    const duration = treatmentItem.duration_minutes;
+
+    // 3. Date & Schedule check
+    const dateStr = params.appointment_date;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      throw new Error('Invalid appointment date format.');
+    }
+
+    const dayOfWeek = this.getDayOfWeek(dateStr);
+    const daySchedule = this.schedule.find((s) => s.day_of_week === dayOfWeek);
+    if (!daySchedule || !daySchedule.is_open || daySchedule.periods.length === 0) {
+      throw new Error('Clinic is closed on this day.');
+    }
+
+    // 4. Time within period check
+    const startMinutes = this.timeToMinutes(params.appointment_time);
+    const endMinutes = startMinutes + duration;
+
+    // Must fit entirely within one period
+    const matchingPeriod = daySchedule.periods.find((period) => {
+      const pStart = this.timeToMinutes(period.start);
+      const pEnd = this.timeToMinutes(period.end);
+      return startMinutes >= pStart && endMinutes <= pEnd;
+    });
+
+    if (!matchingPeriod) {
+      throw new Error(
+        'Selected appointment time is outside working hours, during a closed/break period, or duration exceeds closing time.'
+      );
+    }
+
+    // Must align with slot interval (30 min) from period start
+    const pStartMinutes = this.timeToMinutes(matchingPeriod.start);
+    if ((startMinutes - pStartMinutes) % 30 !== 0) {
+      throw new Error('Appointment time must align with the 30-minute schedule interval.');
+    }
+
+    // 5. Double booking check (overlapping appointments)
+    const existingAppts = this.appointments.filter(
+      (a) => a.appointment_date === dateStr && a.status !== 'cancelled'
+    );
+
+    for (const existing of existingAppts) {
+      const exStart = this.timeToMinutes(existing.appointment_time);
+      let exDuration = existing.duration_minutes;
+      if (!exDuration) {
+        const cat = this.treatmentCatalog.find(
+          (tc) => tc.id === existing.treatment_id || tc.name.toLowerCase() === existing.treatment_name.toLowerCase()
+        );
+        exDuration = cat?.duration_minutes || 30;
+      }
+      const exEnd = exStart + exDuration;
+
+      if (Math.max(startMinutes, exStart) < Math.min(endMinutes, exEnd)) {
+        throw new Error(
+          `Time slot overlaps with an existing appointment (${existing.treatment_name} at ${existing.appointment_time.slice(0, 5)}).`
+        );
+      }
+    }
+
+    const formattedTime = this.minutesToTime(startMinutes);
     const newAppt: Appointment = {
       id: `a_${Date.now()}`,
       clinic_id: CLINIC_ID,
       patient_id: params.patient_id,
+      treatment_id: treatmentItem.id,
       treatment_opportunity_id: params.treatment_opportunity_id,
       appointment_date: params.appointment_date,
-      appointment_time: params.appointment_time,
-      treatment_name: params.treatment_name,
+      appointment_time: formattedTime,
+      duration_minutes: duration,
+      treatment_name: treatmentItem.name,
       status: 'scheduled',
       created_at: new Date().toISOString(),
     };
@@ -999,6 +1440,8 @@ class DentalStore {
     this.appointments = [...INITIAL_APPOINTMENTS];
     this.interactions = [...INITIAL_INTERACTIONS];
     this.followUps = [...INITIAL_FOLLOW_UPS];
+    this.treatmentCatalog = [...INITIAL_TREATMENT_CATALOG];
+    this.schedule = [...INITIAL_SCHEDULE];
     this.saveToLocalStorage();
   }
 }

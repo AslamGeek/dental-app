@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FollowUpItem, InteractionOutcome } from '@/lib/types';
 import { dentalStore } from '@/lib/store';
-import { formatRupee, formatPhoneNumber } from '@/lib/formatting';
+import { formatRupee, formatPhoneNumber, formatTime12H } from '@/lib/formatting';
 import { 
   PhoneOff, 
   Clock, 
@@ -37,23 +37,76 @@ export default function OutcomeModal({
     d.setDate(d.getDate() + 1);
     return d.toISOString().slice(0, 10);
   });
-  const [bookedTime, setBookedTime] = useState('11:00');
+  const [selectedTreatmentId, setSelectedTreatmentId] = useState('');
+  const [bookedTime, setBookedTime] = useState('');
   const [interestedChoice, setInterestedChoice] = useState<'book' | 'followup'>('book');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const activeTreatments = dentalStore.getActiveTreatments();
+
+  // Initialize selected treatment when item changes
+  useEffect(() => {
+    if (!item) return;
+    let initialTrId = activeTreatments[0]?.id || '';
+    if (item.treatment) {
+      const match = activeTreatments.find(
+        (t) => t.name.toLowerCase() === item.treatment!.treatment_name.toLowerCase()
+      );
+      if (match) initialTrId = match.id;
+    }
+    setSelectedTreatmentId(initialTrId);
+  }, [item, activeTreatments]);
+
+  // Reactive slot calculation for outcome booking
+  const slotData = React.useMemo(() => {
+    if (!bookedDate || !selectedTreatmentId) {
+      return { status: 'no_slots' as const, slots: [] as string[], reason: 'Select date and treatment.' };
+    }
+    return dentalStore.getAvailableSlots(bookedDate, selectedTreatmentId);
+  }, [bookedDate, selectedTreatmentId]);
+
+  // Keep selected slot valid
+  useEffect(() => {
+    if (slotData.status === 'open' && slotData.slots.length > 0) {
+      if (!bookedTime || !slotData.slots.includes(bookedTime)) {
+        setBookedTime(slotData.slots[0]);
+      }
+    } else {
+      setBookedTime('');
+    }
+  }, [slotData, bookedTime]);
 
   if (!isOpen || !item) return null;
 
   const handleSave = () => {
     if (!selectedOutcome) return;
+    setErrorMessage('');
+
+    let finalOutcome = selectedOutcome;
+    if (selectedOutcome === 'interested' && interestedChoice === 'book') {
+      finalOutcome = 'appointment_booked';
+    }
+
+    if (finalOutcome === 'appointment_booked') {
+      if (!bookedDate) {
+        setErrorMessage('Please select an appointment date.');
+        return;
+      }
+      if (!bookedTime || slotData.status !== 'open') {
+        if (slotData.status === 'closed') {
+          setErrorMessage('Clinic is closed on this day.');
+        } else {
+          setErrorMessage('Please select an available time slot.');
+        }
+        return;
+      }
+    }
+
     setIsSubmitting(true);
 
     try {
-      let finalOutcome = selectedOutcome;
-      if (selectedOutcome === 'interested' && interestedChoice === 'book') {
-        finalOutcome = 'appointment_booked';
-      }
-
       dentalStore.recordOutcome({
         followUpId: item.id,
         channel: defaultChannel,
@@ -63,14 +116,15 @@ export default function OutcomeModal({
           customCallbackDateTime: selectedOutcome === 'call_back_later' && callbackChoice === 'custom' && customDateTime ? customDateTime : undefined,
           declineReason: selectedOutcome === 'not_interested' ? declineReason : undefined,
           bookedAppointmentDate: finalOutcome === 'appointment_booked' ? bookedDate : undefined,
-          bookedAppointmentTime: finalOutcome === 'appointment_booked' ? `${bookedTime}:00` : undefined,
+          bookedAppointmentTime: finalOutcome === 'appointment_booked' ? bookedTime : undefined,
         },
         notes: notes.trim() || undefined,
       });
 
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save outcome.';
+      setErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -152,6 +206,13 @@ export default function OutcomeModal({
 
         {/* Content */}
         <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+          {errorMessage && (
+            <div className="p-3 text-xs rounded-md bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {/* Outcome Buttons Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {outcomeOptions.map((opt) => {
@@ -270,24 +331,60 @@ export default function OutcomeModal({
               </div>
 
               {interestedChoice === 'book' && (
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="space-y-2.5 pt-2 border-t border-slate-200">
                   <div>
-                    <span className="text-[11px] text-slate-500">Date</span>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Treatment:</label>
+                    <select
+                      value={selectedTreatmentId}
+                      onChange={(e) => setSelectedTreatmentId(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    >
+                      {activeTreatments.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name} ({t.duration_minutes} min · {formatRupee(t.price)})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Date:</label>
                     <input
                       type="date"
                       value={bookedDate}
                       onChange={(e) => setBookedDate(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                     />
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-500">Time</span>
-                    <input
-                      type="time"
-                      value={bookedTime}
-                      onChange={(e) => setBookedTime(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800"
-                    />
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">Available Time Slot:</label>
+                    {slotData.status === 'closed' && (
+                      <div className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs text-center">
+                        Clinic is closed on this day.
+                      </div>
+                    )}
+                    {slotData.status === 'no_slots' && (
+                      <div className="p-2 rounded bg-slate-100 border border-slate-200 text-slate-600 text-xs text-center">
+                        No available times on this date.
+                      </div>
+                    )}
+                    {slotData.status === 'open' && (
+                      <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto p-1 border border-slate-200 rounded-md bg-white">
+                        {slotData.slots.map((slot) => (
+                          <button
+                            key={slot}
+                            type="button"
+                            onClick={() => setBookedTime(slot)}
+                            className={`py-1.5 px-1 text-[11px] font-medium rounded border transition-colors text-center ${
+                              bookedTime === slot
+                                ? 'bg-emerald-700 text-white border-emerald-700'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            {formatTime12H(slot)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -297,25 +394,59 @@ export default function OutcomeModal({
           {selectedOutcome === 'appointment_booked' && (
             <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 space-y-3">
               <label className="block text-xs font-semibold text-slate-700">Appointment Slot:</label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[11px] text-slate-500">Date</span>
-                  <input
-                    type="date"
-                    value={bookedDate}
-                    onChange={(e) => setBookedDate(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800"
-                  />
-                </div>
-                <div>
-                  <span className="text-[11px] text-slate-500">Time</span>
-                  <input
-                    type="time"
-                    value={bookedTime}
-                    onChange={(e) => setBookedTime(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800"
-                  />
-                </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Treatment:</label>
+                <select
+                  value={selectedTreatmentId}
+                  onChange={(e) => setSelectedTreatmentId(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                >
+                  {activeTreatments.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.duration_minutes} min · {formatRupee(t.price)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Date:</label>
+                <input
+                  type="date"
+                  value={bookedDate}
+                  onChange={(e) => setBookedDate(e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">Available Time Slot:</label>
+                {slotData.status === 'closed' && (
+                  <div className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-xs text-center">
+                    Clinic is closed on this day.
+                  </div>
+                )}
+                {slotData.status === 'no_slots' && (
+                  <div className="p-2 rounded bg-slate-100 border border-slate-200 text-slate-600 text-xs text-center">
+                    No available times on this date.
+                  </div>
+                )}
+                {slotData.status === 'open' && (
+                  <div className="grid grid-cols-3 gap-1.5 max-h-32 overflow-y-auto p-1 border border-slate-200 rounded-md bg-white">
+                    {slotData.slots.map((slot) => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setBookedTime(slot)}
+                        className={`py-1.5 px-1 text-[11px] font-medium rounded border transition-colors text-center ${
+                          bookedTime === slot
+                            ? 'bg-emerald-700 text-white border-emerald-700'
+                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        {formatTime12H(slot)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -5,6 +5,7 @@
 DROP TABLE IF EXISTS follow_ups CASCADE;
 DROP TABLE IF EXISTS interactions CASCADE;
 DROP TABLE IF EXISTS appointments CASCADE;
+DROP TABLE IF EXISTS treatment_catalog CASCADE;
 DROP TABLE IF EXISTS treatment_opportunities CASCADE;
 DROP TABLE IF EXISTS patients CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -21,6 +22,7 @@ CREATE TABLE clinics (
     timezone VARCHAR(50) DEFAULT 'Asia/Kolkata',
     working_hours_start TIME DEFAULT '09:30:00',
     working_hours_end TIME DEFAULT '20:30:00',
+    weekly_schedule JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -51,7 +53,20 @@ CREATE INDEX idx_patients_clinic ON patients(clinic_id);
 CREATE INDEX idx_patients_phone ON patients(phone);
 CREATE INDEX idx_patients_name ON patients(name);
 
--- 4. Treatment Opportunities Table
+-- 4. Predefined Clinic Treatment Catalog
+CREATE TABLE treatment_catalog (
+    id VARCHAR(100) PRIMARY KEY,
+    clinic_id UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    duration_minutes INT NOT NULL DEFAULT 30,
+    price NUMERIC(12, 2) DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_treatment_catalog_clinic ON treatment_catalog(clinic_id);
+
+-- 5. Treatment Opportunities Table (Patient Specific Pipeline)
 CREATE TABLE treatment_opportunities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clinic_id UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
@@ -68,14 +83,16 @@ CREATE INDEX idx_treatment_opps_clinic ON treatment_opportunities(clinic_id);
 CREATE INDEX idx_treatment_opps_patient ON treatment_opportunities(patient_id);
 CREATE INDEX idx_treatment_opps_status ON treatment_opportunities(status);
 
--- 5. Appointments Table
+-- 6. Appointments Table
 CREATE TABLE appointments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     clinic_id UUID NOT NULL REFERENCES clinics(id) ON DELETE CASCADE,
     patient_id UUID NOT NULL REFERENCES patients(id) ON DELETE CASCADE,
+    treatment_id VARCHAR(100) REFERENCES treatment_catalog(id) ON DELETE SET NULL,
     treatment_opportunity_id UUID REFERENCES treatment_opportunities(id) ON DELETE SET NULL,
     appointment_date DATE NOT NULL,
     appointment_time TIME NOT NULL,
+    duration_minutes INT DEFAULT 30,
     treatment_name VARCHAR(255) NOT NULL,
     status VARCHAR(50) NOT NULL CHECK (status IN ('scheduled', 'confirmed', 'cancelled', 'rescheduled', 'no_show', 'completed')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
