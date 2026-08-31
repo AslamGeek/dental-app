@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { dentalStore } from '@/lib/store';
 import { Patient, TreatmentCatalogItem } from '@/lib/types';
-import { formatTime12H, formatRupee, formatDateDDMMYYYY } from '@/lib/formatting';
-import { X, CalendarPlus, Clock, AlertCircle, Calendar } from 'lucide-react';
+import { formatTime12H, formatDateDDMMYYYY } from '@/lib/formatting';
+import { X, CalendarPlus, AlertCircle } from 'lucide-react';
 
 interface BookAppointmentModalProps {
   isOpen: boolean;
@@ -29,6 +29,8 @@ export default function BookAppointmentModal({
   const [selectedSlotTime, setSelectedSlotTime] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   // Initialize or reload data when modal opens
   useEffect(() => {
@@ -63,14 +65,11 @@ export default function BookAppointmentModal({
     }
     setSelectedTreatmentId(defaultTrId);
 
-    // Default to tomorrow's date
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    const tomorrowStr = d.toISOString().slice(0, 10);
-    setAppointmentDate(tomorrowStr);
+    // Default to today's date
+    setAppointmentDate(todayStr);
     setSelectedSlotTime('');
     setError('');
-  }, [isOpen, initialPatientId, initialTreatmentId]);
+  }, [isOpen, initialPatientId, initialTreatmentId, todayStr]);
 
   // Reactive slot calculation based on date and treatment
   const slotData = useMemo(() => {
@@ -93,8 +92,6 @@ export default function BookAppointmentModal({
 
   if (!isOpen) return null;
 
-  const selectedTreatment = activeTreatments.find((t) => t.id === selectedTreatmentId);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPatientId) {
@@ -107,6 +104,10 @@ export default function BookAppointmentModal({
     }
     if (!appointmentDate) {
       setError('Please select a valid date.');
+      return;
+    }
+    if (appointmentDate < todayStr) {
+      setError('Appointment date must be today or a future date.');
       return;
     }
     if (!selectedSlotTime) {
@@ -151,7 +152,7 @@ export default function BookAppointmentModal({
             </div>
             <div>
               <h2 className="text-base font-semibold text-slate-900">Book Appointment</h2>
-              <p className="text-xs text-slate-500">Scheduled clinic slot (Asia/Kolkata)</p>
+              <p className="text-xs text-slate-500">Lucky Dental Care, Proddatur</p>
             </div>
           </div>
           <button
@@ -189,7 +190,7 @@ export default function BookAppointmentModal({
             </select>
           </div>
 
-          {/* 2. Treatment Selection from Catalog */}
+          {/* 2. Treatment Selection (No Duration / Fee displayed) */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Treatment <span className="text-rose-500">*</span>
@@ -201,25 +202,13 @@ export default function BookAppointmentModal({
             >
               {activeTreatments.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.name} — {t.duration_minutes} min ({formatRupee(t.price)})
+                  {t.name}
                 </option>
               ))}
             </select>
-            {selectedTreatment && (
-              <div className="mt-1.5 flex items-center gap-3 text-[11px] text-slate-500">
-                <span className="inline-flex items-center gap-1 font-medium text-slate-700">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  Duration: {selectedTreatment.duration_minutes} mins
-                </span>
-                <span>•</span>
-                <span className="font-medium text-slate-700">
-                  Fee: {formatRupee(selectedTreatment.price)}
-                </span>
-              </div>
-            )}
           </div>
 
-          {/* 3. Appointment Date */}
+          {/* 3. Appointment Date (Restricted to today or future) */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Appointment Date <span className="text-rose-500">*</span>
@@ -228,6 +217,7 @@ export default function BookAppointmentModal({
               <input
                 type="date"
                 required
+                min={todayStr}
                 value={appointmentDate}
                 onChange={(e) => setAppointmentDate(e.target.value)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"

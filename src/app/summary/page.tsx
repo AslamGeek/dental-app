@@ -79,7 +79,7 @@ export default function SummaryPage() {
               Dr. Harsha Vardhan Reddy
             </h1>
             <p className="text-emerald-100 text-xs sm:text-sm mt-1 max-w-xl">
-              Sree Balaji Dental Care, Kadapa — Active Treatment Pipeline &amp; Conversion Dashboard
+              Lucky Dental Care, Proddatur — Active Treatment Pipeline &amp; Conversion Dashboard
             </p>
           </div>
 

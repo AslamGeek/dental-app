@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sree Balaji Dental Care | Smart Follow-Up Assistant",
-  description: "Automated dental follow-up and appointment assistant for Sree Balaji Dental Care, Kadapa",
+  title: "Lucky Dental Care | Smart Follow-Up Assistant",
+  description: "Automated dental follow-up and appointment assistant for Lucky Dental Care, Proddatur, AP",
 };
 
 export default function RootLayout({

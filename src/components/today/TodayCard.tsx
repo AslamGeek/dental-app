@@ -81,18 +81,20 @@ export default function TodayCard({
 
   // WhatsApp prefilled message
   const getPrefilledWhatsAppText = () => {
-    const clinicName = 'Sree Balaji Dental Care';
+    const clinicName = 'Lucky Dental Care';
     if (isAppointmentConfirm && item.appointment) {
-      return `Hello ${item.patient.name}, this is from ${clinicName}, Kadapa. Confirming your dental appointment for ${formatDateDDMMYYYY(item.appointment.appointment_date)} at ${formatTime12H(item.appointment.appointment_time)}. Please reply YES to confirm.`;
+      return `Hello ${item.patient.name}, this is from ${clinicName}, Proddatur. Confirming your dental appointment for ${formatDateDDMMYYYY(item.appointment.appointment_date)} at ${formatTime12H(item.appointment.appointment_time)}. Please reply YES to confirm.`;
     }
     if (isMissedAppointment) {
-      return `Hello ${item.patient.name}, we missed you for your dental visit at ${clinicName}. Would you like to reschedule for this week?`;
+      return `Hello ${item.patient.name}, we missed you for your dental visit at ${clinicName}, Proddatur. Would you like to reschedule for this week?`;
     }
     if (item.treatment) {
-      return `Hello ${item.patient.name}, greeting from ${clinicName}, Kadapa. Following up regarding your ${item.treatment.treatment_name} consultation. Please let us know if you have any questions.`;
+      return `Hello ${item.patient.name}, greeting from ${clinicName}, Proddatur. Following up regarding your ${item.treatment.treatment_name} consultation. Please let us know if you have any questions.`;
     }
-    return `Hello ${item.patient.name}, greeting from ${clinicName}, Kadapa. How may we assist you with your dental care?`;
+    return `Hello ${item.patient.name}, greeting from ${clinicName}, Proddatur. How may we assist you with your dental care?`;
   };
+
+  const whatsappTargetNumber = item.patient.whatsapp_number || item.patient.phone;
 
   return (
     <div className="card-elevated p-5 transition-all">
@@ -126,14 +128,6 @@ export default function TodayCard({
           {item.treatment && (
             <div className="flex items-center gap-2 text-sm text-slate-700">
               <span className="font-medium">{item.treatment.treatment_name}</span>
-              {item.treatment.estimated_value > 0 && (
-                <>
-                  <span className="text-slate-300">·</span>
-                  <span className="font-semibold text-emerald-800">
-                    {formatRupee(item.treatment.estimated_value)}
-                  </span>
-                </>
-              )}
             </div>
           )}
 
@@ -159,7 +153,7 @@ export default function TodayCard({
           {isAppointmentConfirm && item.appointment ? (
             <>
               <a
-                href={getWhatsAppLink(item.patient.phone, getPrefilledWhatsAppText())}
+                href={getWhatsAppLink(whatsappTargetNumber, getPrefilledWhatsAppText())}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => onOpenOutcome(item, 'whatsapp')}
@@ -202,7 +196,7 @@ export default function TodayCard({
               </a>
 
               <a
-                href={getWhatsAppLink(item.patient.phone, getPrefilledWhatsAppText())}
+                href={getWhatsAppLink(whatsappTargetNumber, getPrefilledWhatsAppText())}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => onOpenOutcome(item, 'whatsapp')}
@@ -234,7 +228,7 @@ export default function TodayCard({
               </a>
 
               <a
-                href={getWhatsAppLink(item.patient.phone, getPrefilledWhatsAppText())}
+                href={getWhatsAppLink(whatsappTargetNumber, getPrefilledWhatsAppText())}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => onOpenOutcome(item, 'whatsapp')}

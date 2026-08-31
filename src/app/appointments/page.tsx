@@ -121,7 +121,8 @@ export default function AppointmentsPage() {
 
   const renderAppointmentCard = (appt: (typeof filteredAppointments)[0]) => {
     const p = appt.patient;
-    const whatsappMsg = `Hello ${p?.name || 'Patient'}, confirming your appointment at Sree Balaji Dental Care on ${formatDateDDMMYYYY(appt.appointment_date)} at ${formatTime12H(appt.appointment_time)} (${appt.treatment_name}).`;
+    const whatsappMsg = `Hello ${p?.name || 'Patient'}, confirming your appointment at Lucky Dental Care, Proddatur on ${formatDateDDMMYYYY(appt.appointment_date)} at ${formatTime12H(appt.appointment_time)} (${appt.treatment_name}).`;
+    const patientWhatsappNumber = p?.whatsapp_number || p?.phone || '';
 
     return (
       <div
@@ -185,7 +186,7 @@ export default function AppointmentsPage() {
                 <span className="hidden sm:inline">Call</span>
               </a>
               <a
-                href={getWhatsAppLink(p.phone, whatsappMsg)}
+                href={getWhatsAppLink(patientWhatsappNumber, whatsappMsg)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-whatsapp text-xs py-1.5 px-3"

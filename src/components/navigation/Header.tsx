@@ -79,9 +79,9 @@ export default function Header() {
                 </div>
                 <div>
                   <h1 className="font-semibold text-slate-900 leading-tight text-base">
-                    Sree Balaji Dental Care
+                    Lucky Dental Care
                   </h1>
-                  <p className="text-xs text-slate-500 font-normal">Kadapa, AP</p>
+                  <p className="text-xs text-slate-500 font-normal">Proddatur, AP</p>
                 </div>
               </Link>
             </div>

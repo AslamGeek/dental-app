@@ -197,6 +197,31 @@ export default function PatientsPage() {
                     <div className="text-xs text-slate-500 font-mono mt-0.5">
                       {formatPhoneNumber(patient.phone)}
                     </div>
+
+                    {(patient.location || patient.age !== undefined || patient.gender || patient.source) && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1 flex-wrap">
+                        {patient.location && (
+                          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                            {patient.location}
+                          </span>
+                        )}
+                        {patient.age !== undefined && (
+                          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                            {patient.age} yrs
+                          </span>
+                        )}
+                        {patient.gender && (
+                          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                            {patient.gender}
+                          </span>
+                        )}
+                        {patient.source && (
+                          <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                            {patient.source}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Quick Action Phone/WhatsApp */}
@@ -209,7 +234,7 @@ export default function PatientsPage() {
                       <Phone className="w-3.5 h-3.5" />
                     </a>
                     <a
-                      href={getWhatsAppLink(patient.phone, `Hello ${patient.name}, greeting from Sree Balaji Dental Care.`)}
+                      href={getWhatsAppLink(patient.whatsapp_number || patient.phone, `Hello ${patient.name}, greeting from Lucky Dental Care, Proddatur.`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"

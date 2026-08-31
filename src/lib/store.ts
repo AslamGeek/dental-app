@@ -16,6 +16,9 @@ import {
   TreatmentCatalogItem,
   DaySchedule,
   TimePeriod,
+  PatientGender,
+  PatientSource,
+  PREDEFINED_TREATMENTS,
 } from './types';
 import { 
   evaluateOutcomeRules, 
@@ -94,51 +97,6 @@ export const INITIAL_SCHEDULE: DaySchedule[] = [
 // -------------------------------------------------------------
 export const INITIAL_TREATMENT_CATALOG: TreatmentCatalogItem[] = [
   {
-    id: 'tc_consultation',
-    clinic_id: CLINIC_ID,
-    name: 'Consultation & Examination',
-    duration_minutes: 30,
-    price: 500,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'tc_cleaning',
-    clinic_id: CLINIC_ID,
-    name: 'Cleaning & Scaling',
-    duration_minutes: 30,
-    price: 1500,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'tc_filling',
-    clinic_id: CLINIC_ID,
-    name: 'Dental Filling',
-    duration_minutes: 30,
-    price: 2000,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'tc_rct',
-    clinic_id: CLINIC_ID,
-    name: 'Root Canal Treatment',
-    duration_minutes: 60,
-    price: 8000,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'tc_crown',
-    clinic_id: CLINIC_ID,
-    name: 'Dental Crown',
-    duration_minutes: 60,
-    price: 12000,
-    is_active: true,
-    created_at: new Date().toISOString(),
-  },
-  {
     id: 'tc_implant',
     clinic_id: CLINIC_ID,
     name: 'Dental Implant',
@@ -150,9 +108,27 @@ export const INITIAL_TREATMENT_CATALOG: TreatmentCatalogItem[] = [
   {
     id: 'tc_braces',
     clinic_id: CLINIC_ID,
-    name: 'Braces Consultation',
+    name: 'Braces',
     duration_minutes: 30,
-    price: 500,
+    price: 50000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_rct',
+    clinic_id: CLINIC_ID,
+    name: 'Root Canal',
+    duration_minutes: 60,
+    price: 8000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_crown',
+    clinic_id: CLINIC_ID,
+    name: 'Crown',
+    duration_minutes: 60,
+    price: 12000,
     is_active: true,
     created_at: new Date().toISOString(),
   },
@@ -166,23 +142,59 @@ export const INITIAL_TREATMENT_CATALOG: TreatmentCatalogItem[] = [
     created_at: new Date().toISOString(),
   },
   {
+    id: 'tc_cleaning',
+    clinic_id: CLINIC_ID,
+    name: 'Cleaning',
+    duration_minutes: 30,
+    price: 1500,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
     id: 'tc_extraction',
     clinic_id: CLINIC_ID,
-    name: 'Tooth Extraction',
+    name: 'Extraction',
     duration_minutes: 30,
     price: 2000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_denture',
+    clinic_id: CLINIC_ID,
+    name: 'Denture',
+    duration_minutes: 45,
+    price: 25000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_veneers',
+    clinic_id: CLINIC_ID,
+    name: 'Veneers',
+    duration_minutes: 60,
+    price: 15000,
+    is_active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: 'tc_other',
+    clinic_id: CLINIC_ID,
+    name: 'Other',
+    duration_minutes: 30,
+    price: 500,
     is_active: true,
     created_at: new Date().toISOString(),
   },
 ];
 
 // -------------------------------------------------------------
-// SEED DATA INITIALIZER (Kadapa, Andhra Pradesh)
+// SEED DATA INITIALIZER (Lucky Dental Care, Proddatur, AP)
 // -------------------------------------------------------------
 export const INITIAL_CLINIC: Clinic = {
   id: CLINIC_ID,
-  name: 'Sree Balaji Dental Care',
-  city: 'Kadapa',
+  name: 'Lucky Dental Care',
+  city: 'Proddatur',
   state: 'Andhra Pradesh',
   phone: '+91 94402 12345',
   currency: 'INR',
@@ -217,8 +229,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p1',
     clinic_id: CLINIC_ID,
     name: 'Rahul Kumar',
-    phone: '+91 98765 43210',
+    phone: '9876543210',
+    whatsapp_number: '9876543210',
     email: 'rahul.k@example.com',
+    age: 34,
+    gender: 'Male',
+    location: 'Proddatur',
+    source: 'Google',
+    notes: 'Interested in full lower arch implant options.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -227,8 +245,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p2',
     clinic_id: CLINIC_ID,
     name: 'Priya Reddy',
-    phone: '+91 98480 12345',
+    phone: '9848012345',
+    whatsapp_number: '9848012345',
     email: 'priya.r@example.com',
+    age: 22,
+    gender: 'Female',
+    location: 'Proddatur',
+    source: 'Instagram',
+    notes: 'Seeking consultation for ceramic braces alignment.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -237,8 +261,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p3',
     clinic_id: CLINIC_ID,
     name: 'Vijay Bhaskar',
-    phone: '+91 94401 56789',
+    phone: '9440156789',
+    whatsapp_number: '9440156789',
     email: 'vijay.b@example.com',
+    age: 45,
+    gender: 'Male',
+    location: 'Proddatur',
+    source: 'Referral',
+    notes: 'Severe toothache in upper left molar.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -247,8 +277,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p4',
     clinic_id: CLINIC_ID,
     name: 'Suresh Naidu',
-    phone: '+91 99887 76655',
+    phone: '9988776655',
+    whatsapp_number: '9988776655',
     email: 'suresh.n@example.com',
+    age: 29,
+    gender: 'Male',
+    location: 'Proddatur',
+    source: 'Walk-in',
+    notes: 'Requested routine cleaning and check-up.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -257,8 +293,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p5',
     clinic_id: CLINIC_ID,
     name: 'Anita Rao',
-    phone: '+91 91234 56780',
+    phone: '9123456780',
+    whatsapp_number: '9123456780',
     email: 'anita.rao@example.com',
+    age: 38,
+    gender: 'Female',
+    location: 'Proddatur',
+    source: 'Website',
+    notes: 'Considering zirconia crown restoration.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -267,8 +309,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p6',
     clinic_id: CLINIC_ID,
     name: 'K. Venkat Ramana',
-    phone: '+91 96543 21098',
+    phone: '9654321098',
+    whatsapp_number: '9654321098',
     email: 'venkat.k@example.com',
+    age: 58,
+    gender: 'Male',
+    location: 'Proddatur',
+    source: 'Existing Patient',
+    notes: 'Full mouth evaluation and denture consultation.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -277,8 +325,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p7',
     clinic_id: CLINIC_ID,
     name: 'Sunitha Devi',
-    phone: '+91 98761 23450',
+    phone: '9876123450',
+    whatsapp_number: '9876123450',
     email: 'sunitha.d@example.com',
+    age: 26,
+    gender: 'Female',
+    location: 'Proddatur',
+    source: 'Facebook',
+    notes: 'Completed teeth whitening procedure.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 20 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -287,8 +341,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p8',
     clinic_id: CLINIC_ID,
     name: 'Ramesh Babu',
-    phone: '+91 90001 12233',
+    phone: '9000112233',
+    whatsapp_number: '9000112233',
     email: 'ramesh.b@example.com',
+    age: 42,
+    gender: 'Male',
+    location: 'Proddatur',
+    source: 'Walk-in',
+    notes: 'Contact number reached wrong party.',
     flagged_wrong_number: true,
     created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -297,8 +357,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p9',
     clinic_id: CLINIC_ID,
     name: 'Meena Kumari',
-    phone: '+91 97002 23344',
+    phone: '9700223344',
+    whatsapp_number: '9700223344',
     email: 'meena.k@example.com',
+    age: 31,
+    gender: 'Female',
+    location: 'Proddatur',
+    source: 'Referral',
+    notes: 'Composite filling scheduled.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -307,8 +373,14 @@ export const INITIAL_PATIENTS: Patient[] = [
     id: 'p10',
     clinic_id: CLINIC_ID,
     name: 'Rajesh Varma',
-    phone: '+91 98883 34455',
+    phone: '9888334455',
+    whatsapp_number: '9888334455',
     email: 'rajesh.v@example.com',
+    age: 50,
+    gender: 'Male',
+    location: 'Proddatur',
+    source: 'Google',
+    notes: 'Decided to postpone bridge treatment.',
     flagged_wrong_number: false,
     created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
     updated_at: new Date().toISOString(),
@@ -594,10 +666,15 @@ class DentalStore {
 
   private loadFromLocalStorage() {
     try {
-      const data = localStorage.getItem('kadapa_dental_v1_store');
+      const data = localStorage.getItem('lucky_dental_v1_store') || localStorage.getItem('kadapa_dental_v1_store');
       if (data) {
         const parsed = JSON.parse(data);
-        if (parsed.patients) this.patients = parsed.patients;
+        if (parsed.patients) {
+          this.patients = parsed.patients.map((p: Patient) => ({
+            ...p,
+            whatsapp_number: p.whatsapp_number || p.phone,
+          }));
+        }
         if (parsed.treatments) this.treatments = parsed.treatments;
         if (parsed.appointments) this.appointments = parsed.appointments;
         if (parsed.interactions) this.interactions = parsed.interactions;
@@ -614,7 +691,7 @@ class DentalStore {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(
-        'kadapa_dental_v1_store',
+        'lucky_dental_v1_store',
         JSON.stringify({
           patients: this.patients,
           treatments: this.treatments,
@@ -977,17 +1054,34 @@ class DentalStore {
   public addPatient(params: {
     name: string;
     phone: string;
+    whatsapp_number?: string;
     email?: string;
+    age?: number;
+    gender?: PatientGender | string;
+    location?: string;
+    source?: PatientSource | string;
+    notes?: string;
     treatment_name?: string;
     estimated_value?: number;
   }): { patient: Patient; followUp: FollowUp } {
     const patientId = `p_${Date.now()}`;
+    const cleanPhone = params.phone.replace(/\D/g, '').slice(0, 10);
+    const cleanWhatsapp = params.whatsapp_number
+      ? params.whatsapp_number.replace(/\D/g, '').slice(0, 10)
+      : cleanPhone;
+
     const newPatient: Patient = {
       id: patientId,
       clinic_id: CLINIC_ID,
       name: params.name.trim(),
-      phone: params.phone.trim(),
-      email: params.email?.trim(),
+      phone: cleanPhone,
+      whatsapp_number: cleanWhatsapp,
+      email: params.email?.trim() || undefined,
+      age: params.age,
+      gender: params.gender,
+      location: params.location?.trim() || undefined,
+      source: params.source,
+      notes: params.notes?.trim() || undefined,
       flagged_wrong_number: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -1201,6 +1295,11 @@ class DentalStore {
       throw new Error('Invalid appointment date format.');
     }
 
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (dateStr < todayStr) {
+      throw new Error('Appointment date must be today or a future date.');
+    }
+
     const dayOfWeek = this.getDayOfWeek(dateStr);
     const daySchedule = this.schedule.find((s) => s.day_of_week === dayOfWeek);
     if (!daySchedule || !daySchedule.is_open || daySchedule.periods.length === 0) {
@@ -1344,10 +1443,16 @@ class DentalStore {
    */
   public scheduleManualFollowUp(params: {
     patient_id: string;
-    treatment_opportunity_id?: string;
     due_at: string;
-    title: string;
+    title?: string;
+    treatment_opportunity_id?: string;
   }): FollowUp {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const dueDateStr = params.due_at.slice(0, 10);
+    if (dueDateStr < todayStr) {
+      throw new Error('Follow-up date must be today or a future date.');
+    }
+
     const followUp: FollowUp = {
       id: `f_${Date.now()}`,
       clinic_id: CLINIC_ID,

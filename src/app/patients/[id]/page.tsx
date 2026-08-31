@@ -9,9 +9,9 @@ import {
   Appointment,
   Interaction,
   FollowUp,
+  PREDEFINED_TREATMENTS,
 } from '@/lib/types';
 import {
-  formatRupee,
   formatPhoneNumber,
   getTelLink,
   getWhatsAppLink,
@@ -32,10 +32,10 @@ import {
   Check,
   X,
   XCircle,
-  CalendarCheck,
-  Sparkles,
   History,
-  FileText,
+  MapPin,
+  User as UserIcon,
+  Tag,
 } from 'lucide-react';
 
 interface PageProps {
@@ -45,6 +45,8 @@ interface PageProps {
 export default function PatientDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const patientId = resolvedParams.id;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [treatments, setTreatments] = useState<TreatmentOpportunity[]>([]);
@@ -57,8 +59,8 @@ export default function PatientDetailPage({ params }: PageProps) {
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [newPhone, setNewPhone] = useState('');
   const [isAddTreatmentOpen, setIsAddTreatmentOpen] = useState(false);
-  const [newTreatmentName, setNewTreatmentName] = useState('');
-  const [newTreatmentValue, setNewTreatmentValue] = useState('');
+  const [selectedTreatment, setSelectedTreatment] = useState<string>(PREDEFINED_TREATMENTS[0]);
+  const [customTreatmentName, setCustomTreatmentName] = useState('');
   const [isScheduleFollowUpOpen, setIsScheduleFollowUpOpen] = useState(false);
   const [followUpTitle, setFollowUpTitle] = useState('');
   const [followUpDate, setFollowUpDate] = useState(() => {
@@ -66,6 +68,7 @@ export default function PatientDetailPage({ params }: PageProps) {
     d.setDate(d.getDate() + 3);
     return d.toISOString().slice(0, 10);
   });
+  const [dateError, setDateError] = useState('');
 
   const loadData = () => {
     const p = dentalStore.getPatientById(patientId);
@@ -111,21 +114,30 @@ export default function PatientDetailPage({ params }: PageProps) {
 
   const handleAddTreatment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTreatmentName.trim()) return;
-    const val = newTreatmentValue ? parseFloat(newTreatmentValue) : 0;
+    const treatmentName =
+      selectedTreatment === 'Other'
+        ? customTreatmentName.trim()
+        : selectedTreatment;
+
+    if (!treatmentName) return;
+
     dentalStore.addTreatment({
       patient_id: patientId,
-      treatment_name: newTreatmentName.trim(),
-      estimated_value: val,
+      treatment_name: treatmentName,
     });
-    setNewTreatmentName('');
-    setNewTreatmentValue('');
+    setSelectedTreatment(PREDEFINED_TREATMENTS[0]);
+    setCustomTreatmentName('');
     setIsAddTreatmentOpen(false);
   };
 
   const handleScheduleFollowUp = (e: React.FormEvent) => {
     e.preventDefault();
     if (!followUpDate) return;
+    if (followUpDate < todayStr) {
+      setDateError('Follow-up date must be today or a future date.');
+      return;
+    }
+    setDateError('');
     dentalStore.scheduleManualFollowUp({
       patient_id: patientId,
       due_at: new Date(`${followUpDate}T11:00:00`).toISOString(),
@@ -137,6 +149,7 @@ export default function PatientDetailPage({ params }: PageProps) {
 
   const activeTreatments = treatments.filter((t) => t.status === 'considering');
   const openFollowUp = followUps.find((f) => f.status === 'pending');
+  const whatsappTargetNumber = patient.whatsapp_number || patient.phone;
 
   return (
     <div className="space-y-6">
@@ -153,14 +166,14 @@ export default function PatientDetailPage({ params }: PageProps) {
 
       {/* Patient Profile Card */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           {/* Avatar & Patient Info */}
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-4 flex-1">
             <div className="w-14 h-14 rounded-2xl bg-emerald-700 text-white flex items-center justify-center font-bold text-2xl shadow-sm shrink-0">
               {patient.name.charAt(0)}
             </div>
 
-            <div>
+            <div className="space-y-1.5 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{patient.name}</h1>
                 {patient.flagged_wrong_number ? (
@@ -184,7 +197,8 @@ export default function PatientDetailPage({ params }: PageProps) {
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
                     className="px-2.5 py-1 text-xs border border-slate-300 rounded font-mono focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
+                    maxLength={10}
                     autoFocus
                   />
                   <button type="submit" className="btn-primary text-xs py-1 px-2">
@@ -215,14 +229,54 @@ export default function PatientDetailPage({ params }: PageProps) {
                 </div>
               )}
 
-              <p className="text-xs text-slate-400 mt-1">
-                Patient added on {formatDateDDMMYYYY(patient.created_at)}
+              {/* Extended Profile Attributes */}
+              <div className="flex items-center gap-3 text-xs text-slate-600 pt-1 flex-wrap">
+                {patient.age !== undefined && (
+                  <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                    <UserIcon className="w-3 h-3 text-slate-500" />
+                    {patient.age} yrs
+                  </span>
+                )}
+                {patient.gender && (
+                  <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                    {patient.gender}
+                  </span>
+                )}
+                {patient.location && (
+                  <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                    <MapPin className="w-3 h-3 text-slate-500" />
+                    {patient.location}
+                  </span>
+                )}
+                {patient.source && (
+                  <span className="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-slate-700">
+                    <Tag className="w-3 h-3 text-slate-500" />
+                    {patient.source}
+                  </span>
+                )}
+                {patient.whatsapp_number && patient.whatsapp_number !== patient.phone && (
+                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-mono">
+                    <MessageSquare className="w-3 h-3 text-emerald-600" />
+                    WA: {formatPhoneNumber(patient.whatsapp_number)}
+                  </span>
+                )}
+              </div>
+
+              {patient.notes && (
+                <div className="text-xs text-slate-700 mt-2 bg-slate-50 border border-slate-200/80 rounded-md p-2.5">
+                  <span className="font-semibold text-slate-900">Notes: </span>
+                  {patient.notes}
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-400 mt-1">
+                Patient registered on {formatDateDDMMYYYY(patient.created_at)}
               </p>
             </div>
           </div>
 
           {/* Contact and Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             <a
               href={getTelLink(patient.phone)}
               className="btn-call text-xs sm:text-sm py-2 px-3.5"
@@ -231,7 +285,10 @@ export default function PatientDetailPage({ params }: PageProps) {
               <span>Call</span>
             </a>
             <a
-              href={getWhatsAppLink(patient.phone, `Hello ${patient.name}, greeting from Sree Balaji Dental Care, Kadapa.`)}
+              href={getWhatsAppLink(
+                whatsappTargetNumber,
+                `Hello ${patient.name}, greeting from Lucky Dental Care, Proddatur.`
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="btn-whatsapp text-xs sm:text-sm py-2 px-3.5"
@@ -304,34 +361,41 @@ export default function PatientDetailPage({ params }: PageProps) {
                 onSubmit={handleAddTreatment}
                 className="p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-3 animate-in fade-in duration-150"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Treatment Name
+                      Select Treatment Procedure
                     </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Root Canal & Crown"
-                      value={newTreatmentName}
-                      onChange={(e) => setNewTreatmentName(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white"
-                    />
+                    <select
+                      value={selectedTreatment}
+                      onChange={(e) => setSelectedTreatment(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    >
+                      {PREDEFINED_TREATMENTS.map((tr) => (
+                        <option key={tr} value={tr}>
+                          {tr}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Estimated Value (₹)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="12000"
-                      value={newTreatmentValue}
-                      onChange={(e) => setNewTreatmentValue(e.target.value)}
-                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white font-mono"
-                    />
-                  </div>
+
+                  {selectedTreatment === 'Other' && (
+                    <div className="mt-2 animate-in fade-in duration-150">
+                      <label className="block text-xs font-medium text-slate-700 mb-1">
+                        Specify Treatment Name <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Laser Gum Treatment, Night Guard"
+                        value={customTreatmentName}
+                        onChange={(e) => setCustomTreatmentName(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded bg-white text-slate-900 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-2 pt-1">
                   <button
                     type="button"
                     onClick={() => setIsAddTreatmentOpen(false)}
@@ -375,11 +439,6 @@ export default function PatientDetailPage({ params }: PageProps) {
                           {t.status}
                         </span>
                       </div>
-                      {t.estimated_value > 0 && (
-                        <div className="text-xs font-semibold text-emerald-800 mt-0.5">
-                          {formatRupee(t.estimated_value)}
-                        </div>
-                      )}
                       {t.decline_reason && (
                         <p className="text-xs text-rose-600 italic mt-1">
                           Reason: {t.decline_reason}
@@ -583,6 +642,12 @@ export default function PatientDetailPage({ params }: PageProps) {
               </button>
             </div>
             <form onSubmit={handleScheduleFollowUp} className="p-6 space-y-4">
+              {dateError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-medium flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{dateError}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Follow-Up Reason / Title
@@ -601,15 +666,22 @@ export default function PatientDetailPage({ params }: PageProps) {
                 <input
                   type="date"
                   required
+                  min={todayStr}
                   value={followUpDate}
-                  onChange={(e) => setFollowUpDate(e.target.value)}
+                  onChange={(e) => {
+                    setFollowUpDate(e.target.value);
+                    setDateError('');
+                  }}
                   className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg text-slate-900"
                 />
               </div>
               <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsScheduleFollowUpOpen(false)}
+                  onClick={() => {
+                    setIsScheduleFollowUpOpen(false);
+                    setDateError('');
+                  }}
                   className="btn-secondary text-sm py-2 px-4"
                 >
                   Cancel

@@ -32,11 +32,9 @@ export default function OutcomeModal({
   const [callbackChoice, setCallbackChoice] = useState<'later_today' | 'tomorrow' | 'custom'>('tomorrow');
   const [customDateTime, setCustomDateTime] = useState('');
   const [declineReason, setDeclineReason] = useState('Decided not to proceed');
-  const [bookedDate, setBookedDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 10);
-  });
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayDateTimeStr = useMemo(() => new Date().toISOString().slice(0, 16), []);
+  const [bookedDate, setBookedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [selectedTreatmentId, setSelectedTreatmentId] = useState('');
   const [bookedTime, setBookedTime] = useState('');
   const [interestedChoice, setInterestedChoice] = useState<'book' | 'followup'>('book');
@@ -94,12 +92,27 @@ export default function OutcomeModal({
         setErrorMessage('Please select an appointment date.');
         return;
       }
+      if (bookedDate < todayStr) {
+        setErrorMessage('Appointment date must be today or a future date.');
+        return;
+      }
       if (!bookedTime || slotData.status !== 'open') {
         if (slotData.status === 'closed') {
           setErrorMessage('Clinic is closed on this day.');
         } else {
           setErrorMessage('Please select an available time slot.');
         }
+        return;
+      }
+    }
+
+    if (selectedOutcome === 'call_back_later' && callbackChoice === 'custom') {
+      if (!customDateTime) {
+        setErrorMessage('Please select a callback date & time.');
+        return;
+      }
+      if (customDateTime.slice(0, 10) < todayStr) {
+        setErrorMessage('Callback date must be today or a future date.');
         return;
       }
     }
@@ -190,7 +203,7 @@ export default function OutcomeModal({
             <p className="text-xs text-slate-600 mt-0.5">
               <span className="font-medium text-slate-900">{item.patient.name}</span>
               {item.treatment && (
-                <> · {item.treatment.treatment_name} ({formatRupee(item.treatment.estimated_value)})</>
+                <> · {item.treatment.treatment_name}</>
               )}
               {' · '}{formatPhoneNumber(item.patient.phone)}
             </p>
@@ -293,6 +306,7 @@ export default function OutcomeModal({
                 <div className="pt-2">
                   <input
                     type="datetime-local"
+                    min={todayDateTimeStr}
                     value={customDateTime}
                     onChange={(e) => setCustomDateTime(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
@@ -341,7 +355,7 @@ export default function OutcomeModal({
                     >
                       {activeTreatments.map((t) => (
                         <option key={t.id} value={t.id}>
-                          {t.name} ({t.duration_minutes} min · {formatRupee(t.price)})
+                          {t.name}
                         </option>
                       ))}
                     </select>
@@ -350,6 +364,7 @@ export default function OutcomeModal({
                     <label className="block text-[11px] font-semibold text-slate-700 mb-1">Date:</label>
                     <input
                       type="date"
+                      min={todayStr}
                       value={bookedDate}
                       onChange={(e) => setBookedDate(e.target.value)}
                       className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"
@@ -403,7 +418,7 @@ export default function OutcomeModal({
                 >
                   {activeTreatments.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.name} ({t.duration_minutes} min · {formatRupee(t.price)})
+                      {t.name}
                     </option>
                   ))}
                 </select>
@@ -412,6 +427,7 @@ export default function OutcomeModal({
                 <label className="block text-[11px] font-semibold text-slate-700 mb-1">Date:</label>
                 <input
                   type="date"
+                  min={todayStr}
                   value={bookedDate}
                   onChange={(e) => setBookedDate(e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-md bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-600"

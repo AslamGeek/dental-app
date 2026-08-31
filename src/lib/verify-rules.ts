@@ -1,4 +1,4 @@
-// Automated Rule and Scenario Verification Suite for Kadapa Dental Assistant V1
+// Automated Rule and Scenario Verification Suite for Lucky Dental Care Assistant V1
 import { evaluateOutcomeRules, createNewPatientFollowUpPlan, createMissedAppointmentFollowUpPlan } from './follow-up-rules';
 import { formatRupee, formatPhoneNumber, formatDateDDMMYYYY, formatTime12H, getRelativeDueDateContext } from './formatting';
 import { FollowUp } from './types';
@@ -95,20 +95,20 @@ dentalStore.resetToDemoData();
 
 // 11. Treatment Catalog Test
 const activeCatalog = dentalStore.getActiveTreatments();
-assert(activeCatalog.length === 9, 'Catalog contains 9 predefined active treatments');
+assert(activeCatalog.length === 10, 'Catalog contains 10 predefined active treatments');
 assert(activeCatalog.some((t) => t.name === 'Dental Implant' && t.duration_minutes === 90 && t.price === 85000), 'Dental Implant 90 min / ₹85,000 in catalog');
-assert(activeCatalog.some((t) => t.name === 'Root Canal Treatment' && t.duration_minutes === 60 && t.price === 8000), 'Root Canal Treatment 60 min / ₹8,000 in catalog');
-assert(activeCatalog.some((t) => t.name === 'Cleaning & Scaling' && t.duration_minutes === 30 && t.price === 1500), 'Cleaning & Scaling 30 min / ₹1,500 in catalog');
+assert(activeCatalog.some((t) => t.name === 'Root Canal' && t.duration_minutes === 60 && t.price === 8000), 'Root Canal 60 min / ₹8,000 in catalog');
+assert(activeCatalog.some((t) => t.name === 'Cleaning' && t.duration_minutes === 30 && t.price === 1500), 'Cleaning 30 min / ₹1,500 in catalog');
 
 // 12. Day of week & Sunday Closed Test
 // 2026-08-30 is Sunday
-const sundaySlots = dentalStore.getAvailableSlots('2026-08-30', 'tc_consultation');
+const sundaySlots = dentalStore.getAvailableSlots('2026-08-30', 'tc_cleaning');
 assert(sundaySlots.status === 'closed', 'Sunday is closed');
 assert(sundaySlots.slots.length === 0, 'Sunday has 0 available slots');
 
 // 13. Monday (2026-08-31) Working Hours & Multi-Period Slot Generation Test
 // Monday morning: 09:30 to 13:00, evening: 16:00 to 20:30
-const monday30MinSlots = dentalStore.getAvailableSlots('2026-08-31', 'tc_consultation');
+const monday30MinSlots = dentalStore.getAvailableSlots('2026-08-31', 'tc_cleaning');
 assert(monday30MinSlots.status === 'open', 'Monday 30 min slots are open');
 assert(monday30MinSlots.slots.includes('09:30:00'), 'Morning session starts at 09:30 AM');
 assert(monday30MinSlots.slots.includes('12:30:00'), '30 min slot at 12:30 PM (ends 13:00 PM)');
@@ -139,7 +139,7 @@ dentalStore.addAppointment({
 });
 
 // Verify 10:00 AM slot is no longer offered for any treatment on that day
-const postBooking30Min = dentalStore.getAvailableSlots('2026-08-31', 'tc_consultation');
+const postBooking30Min = dentalStore.getAvailableSlots('2026-08-31', 'tc_cleaning');
 assert(!postBooking30Min.slots.includes('10:00:00'), '10:00 AM slot is excluded after booking');
 assert(!postBooking30Min.slots.includes('10:30:00'), '10:30 AM slot is excluded (overlaps 10:00-11:00 appointment)');
 assert(postBooking30Min.slots.includes('09:30:00'), '09:30 AM 30-min slot is available (ends 10:00 AM)');
@@ -155,7 +155,7 @@ let rejectedClosedDay = false;
 try {
   dentalStore.addAppointment({
     patient_id: 'p1',
-    treatment_id: 'tc_consultation',
+    treatment_id: 'tc_cleaning',
     appointment_date: '2026-08-30', // Sunday
     appointment_time: '10:00:00',
   });
@@ -169,7 +169,7 @@ let rejectedOverlap = false;
 try {
   dentalStore.addAppointment({
     patient_id: 'p2',
-    treatment_id: 'tc_consultation',
+    treatment_id: 'tc_cleaning',
     appointment_date: '2026-08-31',
     appointment_time: '10:30:00', // Overlaps with 10:00 - 11:00
   });
@@ -183,7 +183,7 @@ let rejectedLunchTime = false;
 try {
   dentalStore.addAppointment({
     patient_id: 'p2',
-    treatment_id: 'tc_consultation',
+    treatment_id: 'tc_cleaning',
     appointment_date: '2026-08-31',
     appointment_time: '14:00:00', // Lunch break
   });

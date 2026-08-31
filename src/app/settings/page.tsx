@@ -51,7 +51,7 @@ export default function SettingsPage() {
   const handleResetData = () => {
     if (window.confirm('Are you sure you want to reset all clinic data to default demo state?')) {
       dentalStore.resetToDemoData();
-      setResetMessage('Clinic data has been reset to default Kadapa demo dataset.');
+      setResetMessage('Clinic data has been reset to default Lucky Dental Care (Proddatur) demo dataset.');
       setTimeout(() => setResetMessage(''), 4000);
     }
   };
@@ -483,7 +483,7 @@ export default function SettingsPage() {
         </div>
 
         <p className="text-xs text-slate-500">
-          This restores all 7 Kadapa clinical patient cases (Rahul Kumar, Priya Reddy, Vijay Bhaskar, Suresh Naidu, Lakshmi Devi, Venkatesh Prasad, Anitha Kumari) with preloaded active treatment opportunities and scheduled follow-ups.
+          This restores all Lucky Dental Care (Proddatur) clinical patient cases with preloaded active treatment opportunities and scheduled follow-ups.
         </p>
       </div>
     </div>

@@ -26,12 +26,50 @@ export interface User {
   created_at: string;
 }
 
+export const PREDEFINED_TREATMENTS = [
+  'Dental Implant',
+  'Braces',
+  'Root Canal',
+  'Crown',
+  'Teeth Whitening',
+  'Cleaning',
+  'Extraction',
+  'Denture',
+  'Veneers',
+  'Other',
+] as const;
+
+export type PredefinedTreatment = (typeof PREDEFINED_TREATMENTS)[number];
+
+export const PATIENT_SOURCES = [
+  'Referral',
+  'Walk-in',
+  'Google',
+  'Instagram',
+  'Facebook',
+  'Website',
+  'Existing Patient',
+  'Other',
+] as const;
+
+export type PatientSource = (typeof PATIENT_SOURCES)[number];
+
+export const GENDER_OPTIONS = ['Male', 'Female', 'Other'] as const;
+
+export type PatientGender = (typeof GENDER_OPTIONS)[number];
+
 export interface Patient {
   id: string;
   clinic_id: string;
   name: string;
   phone: string;
+  whatsapp_number?: string;
   email?: string;
+  age?: number;
+  gender?: PatientGender | string;
+  location?: string;
+  source?: PatientSource | string;
+  notes?: string;
   flagged_wrong_number: boolean;
   created_at: string;
   updated_at: string;
